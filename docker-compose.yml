@@ -1,0 +1,31 @@
+version: '3.8'
+
+networks:
+  go-challenge:
+
+services:
+  go-api:
+    build: .
+    env_file:
+      - ./.env
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql-db
+    networks:
+      - go-challenge
+  mysql-db:
+    image: "mysql:latest"
+    container_name: "db-mysql"
+    ports:
+      - "23306:3306"
+    environment:
+      MYSQL_DATABASE: "go-challenge"
+      MYSQL_ROOT_PASSWORD: "password"
+    volumes:
+      - "./resources/db.sql:/docker-entrypoint-initdb.d/db.sql"
+    networks:
+      - go-challenge
+
+volumes:
+  sql_data:

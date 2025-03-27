@@ -1,0 +1,368 @@
+basePath: /api
+definitions:
+  api.RequestError:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+    type: object
+  handlers.AuthResponseDTO:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/handlers.UserResponseDTO'
+    type: object
+  handlers.LoginDTO:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  handlers.RegisterUserDTO:
+    properties:
+      confirmPassword:
+        type: string
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+    type: object
+  handlers.RestockHistoryDTO:
+    properties:
+      amount:
+        type: integer
+      itemID:
+        type: integer
+      name:
+        type: string
+      time:
+        type: string
+    type: object
+  handlers.RestockItemDTO:
+    properties:
+      quantity:
+        type: integer
+    type: object
+  handlers.UserResponseDTO:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      role:
+        type: string
+    type: object
+  models.InventoryItem:
+    properties:
+      description:
+        type: string
+      lastRestock:
+        type: string
+      name:
+        type: string
+      quantity:
+        type: integer
+    type: object
+  models.Restock:
+    properties:
+      inventoryItem:
+        $ref: '#/definitions/models.InventoryItem'
+      name:
+        type: integer
+    type: object
+host: localhost:8080
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: Go challenge.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: Swagger Example API
+  version: "1.0"
+paths:
+  /auth/admin/register:
+    post:
+      consumes:
+      - application/json
+      description: Registers a new admin with the given email, password, and name.
+        Validates the input, checks password match and creates the user in the database.
+      parameters:
+      - description: Bearer Token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: User registration details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RegisterUserDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User successfully registered
+          schema:
+            $ref: '#/definitions/handlers.AuthResponseDTO'
+        "400":
+          description: Invalid input or user already exists
+          schema:
+            $ref: '#/definitions/api.RequestError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.RequestError'
+      security:
+      - BearerAuth: []
+      summary: Register a new admin
+      tags:
+      - Authentication
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticates a user by validating the email and password, and
+        generates an authentication token if successful.
+      parameters:
+      - description: User login details
+        in: body
+        name: login
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.LoginDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Authentication successful, token returned
+          schema:
+            $ref: '#/definitions/handlers.AuthResponseDTO'
+        "400":
+          description: Invalid input
+          schema:
+            $ref: '#/definitions/api.RequestError'
+        "401":
+          description: Incorrect email or password
+          schema:
+            $ref: '#/definitions/api.RequestError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.RequestError'
+      summary: Login user
+      tags:
+      - Authentication
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Registers a new user with the given email, password, and name.
+        Validates the input, checks password match, assigns a default role, and creates
+        the user in the database.
+      parameters:
+      - description: User registration details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RegisterUserDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: User successfully registered
+          schema:
+            $ref: '#/definitions/handlers.AuthResponseDTO'
+        "400":
+          description: Invalid input or user already exists
+          schema:
+            $ref: '#/definitions/api.RequestError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.RequestError'
+      summary: Register a new user
+      tags:
+      - Authentication
+  /inventory:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves a list of inventory items from the database. Optionally
+        filters the results to show items with low stock, based on the query parameter
+        `lowStock`.
+      parameters:
+      - description: Bearer Token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Filter by low stock (quantity <= LOW_STOCK_THRESHOLD)
+        in: query
+        name: lowStock
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of inventory items
+          schema:
+            items:
+              $ref: '#/definitions/models.InventoryItem'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.RequestError'
+      security:
+      - BearerAuth: []
+      summary: Get a list of inventory items
+      tags:
+      - Inventory
+    post:
+      consumes:
+      - application/json
+      description: Creates a new item in the inventory with the provided details,
+        validates input, and handles errors such as duplicate items.
+      parameters:
+      - description: Bearer Token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Inventory item details
+        in: body
+        name: item
+        required: true
+        schema:
+          $ref: '#/definitions/models.InventoryItem'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Item successfully created
+          schema:
+            $ref: '#/definitions/models.InventoryItem'
+        "400":
+          description: Invalid input or item already exists
+          schema:
+            $ref: '#/definitions/api.RequestError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.RequestError'
+      security:
+      - BearerAuth: []
+      summary: Create a new inventory item
+      tags:
+      - Inventory
+  /inventory/{itemID}/restock:
+    post:
+      consumes:
+      - application/json
+      description: Restocks an inventory item with the provided quantity, checks if
+        restock quota is reached, and handles errors such as invalid itemID, quota
+        exceeded, or database issues.
+      parameters:
+      - description: Bearer Token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Inventory Item ID
+        in: path
+        name: itemID
+        required: true
+        type: integer
+      - description: Restock details
+        in: body
+        name: restock
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RestockItemDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Item successfully restocked
+          schema:
+            $ref: '#/definitions/models.Restock'
+        "400":
+          description: Invalid itemID or invalid input
+          schema:
+            $ref: '#/definitions/api.RequestError'
+        "404":
+          description: Item not found
+          schema:
+            $ref: '#/definitions/api.RequestError'
+        "409":
+          description: Item already exists
+          schema:
+            $ref: '#/definitions/api.RequestError'
+        "429":
+          description: Item quota reached
+          schema:
+            $ref: '#/definitions/api.RequestError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.RequestError'
+      security:
+      - BearerAuth: []
+      summary: Restock an inventory item
+      tags:
+      - Inventory
+  /inventory/restock:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves the restock history for inventory items. Optionally filters
+        the history based on the `itemId` query parameter.
+      parameters:
+      - description: Bearer Token
+        in: header
+        name: Authorization
+        required: true
+        type: string
+      - description: Filter restock history by item ID
+        in: query
+        name: itemId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of restock history records
+          schema:
+            items:
+              $ref: '#/definitions/handlers.RestockHistoryDTO'
+            type: array
+        "400":
+          description: Invalid input
+          schema:
+            $ref: '#/definitions/api.RequestError'
+        "404":
+          description: Item not found
+          schema:
+            $ref: '#/definitions/api.RequestError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.RequestError'
+      security:
+      - BearerAuth: []
+      summary: Get restock history for inventory items
+      tags:
+      - Inventory
+      - Restock
+swagger: "2.0"
